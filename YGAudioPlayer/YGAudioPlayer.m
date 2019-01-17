@@ -185,9 +185,11 @@ static YGAudioPlayer* _instance = nil;
         _player = [AVPlayer new];
         if (@available(iOS 10.0, *)) {
             _player.automaticallyWaitsToMinimizeStalling = NO;
+            _player.currentItem.preferredForwardBufferDuration = 1;
         } else {
             // Fallback on earlier versions
         }
+        _player.currentItem.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
         _player.volume = 0.5;
     }
     return _player;
