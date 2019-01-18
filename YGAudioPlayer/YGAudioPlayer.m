@@ -98,7 +98,6 @@ static YGAudioPlayer* _instance = nil;
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     
-    AVPlayerItem *playerItem = object;
     if ([keyPath isEqualToString:@"status"]) {
         AVPlayerItemStatus status = [change[@"new"] integerValue];
         switch (status) {
@@ -125,7 +124,7 @@ static YGAudioPlayer* _instance = nil;
             default:
                 break;
         }
-    } else if([keyPath isEqualToString:@"loadedTimeRanges"]){
+    }/* else if([keyPath isEqualToString:@"loadedTimeRanges"]){
         NSArray *array = playerItem.loadedTimeRanges;
         //本次缓冲时间范围
         CMTimeRange timeRange = [array.firstObject CMTimeRangeValue];
@@ -134,11 +133,8 @@ static YGAudioPlayer* _instance = nil;
         //缓冲总长度
         NSTimeInterval totalBuffer = startSeconds + durationSeconds;
         NSLog(@"共缓冲：%.2f",totalBuffer);
-        if (self.bufferProgressBlock) {
-            self.bufferProgressBlock(totalBuffer);
-        }
         
-    } else if ([keyPath isEqualToString:@"rate"]) {
+    }*/ else if ([keyPath isEqualToString:@"rate"]) {
         // rate=1:播放，rate!=1:非播放
         float rate = self.player.rate;
         if (self.playRateBlock) {
