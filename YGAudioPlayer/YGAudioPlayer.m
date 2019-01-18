@@ -15,6 +15,8 @@
 
 @property (nonatomic, strong) id timeObserver;
 
+@property (nonatomic, assign) CGFloat waitPlayTime;
+
 @end
 
 @implementation YGAudioPlayer
@@ -37,37 +39,82 @@ static YGAudioPlayer* _instance = nil;
     AVPlayerItem *playerItem = [[AVPlayerItem alloc] initWithURL:playerItemURL];
     [self.player replaceCurrentItemWithPlayerItem:playerItem];
     [self currentItemAddObserver];
+    
+    self.playStatus = YGAudioPlayerPlayStatusNone;
+    if (self.playStatusChangeBlock) {
+        self.playStatusChangeBlock(self.playStatus);
+    }
 }
 
 - (void)pause {
     
     [self.player pause];
+    if (self.isPlaying) {
+        self.isPlaying = NO;
+        self.playStatus = YGAudioPlayerPlayStatusPause;
+        if (self.playStatusChangeBlock) {
+            self.playStatusChangeBlock(self.playStatus);
+        }
+    }
 }
 
-- (void)resume {
+- (void)playAtTime:(CGFloat)time {
     
+    self.waitPlayTime = time;
+    [self play];
+}
+
+- (void)play {
+    
+    if (self.waitPlayTime > 0) {
+        [self seekToSecond:self.waitPlayTime];
+    }
     [self.player play];
+    if (!self.isPlaying) {
+        self.isPlaying = YES;
+        self.playStatus = YGAudioPlayerPlayStatusPlaying;
+        if (self.playStatusChangeBlock) {
+            self.playStatusChangeBlock(self.playStatus);
+        }
+    }
 }
 
 - (void)seekToProgress:(CGFloat)progress {
     
     float totalDuration = CMTimeGetSeconds(self.player.currentItem.duration);
-    CGFloat seekTime = totalDuration*progress;
-    if (self.player && self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
-        [self.player seekToTime:CMTimeMakeWithSeconds(seekTime, self.player.currentItem.currentTime.timescale) completionHandler:^(BOOL finished) {
-            if (finished) {
-                
-            }
-        }];
+    CGFloat seekTime = totalDuration * progress;
+    self.waitPlayTime = seekTime;
+    if (self.isPlaying && self.player && self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
+        [self seekToSecond:seekTime];
     }
+}
+
+- (void)seekToSecond:(CGFloat)second {
+    
+    self.waitPlayTime = 0;
+    [self.player seekToTime:CMTimeMakeWithSeconds(second, self.player.currentItem.currentTime.timescale) completionHandler:^(BOOL finished) {
+        if (finished) {
+            
+        }
+    }];
+}
+
+- (NSUInteger)playTime {
+    
+    NSUInteger seconds = CMTimeGetSeconds(self.player.currentTime);
+    return seconds;
+}
+
+- (NSUInteger)playDuration {
+    
+    NSUInteger seconds = CMTimeGetSeconds(self.player.currentItem.duration);
+    return seconds;
 }
 
 - (void)currentItemAddObserver {
     //监控状态属性，注意AVPlayer也有一个status属性，通过监控它的status也可以获得播放状态
     [self.player.currentItem addObserver:self forKeyPath:@"status" options:(NSKeyValueObservingOptionOld|NSKeyValueObservingOptionNew) context:nil];
-    
-    //监控缓冲加载情况属性
-    [self.player.currentItem addObserver:self forKeyPath:@"loadedTimeRanges" options:NSKeyValueObservingOptionOld|NSKeyValueObservingOptionNew context:nil];
+    [self.player.currentItem addObserver:self forKeyPath:@"rate" options:(NSKeyValueObservingOptionOld|NSKeyValueObservingOptionNew) context:nil];
     
     //监控播放完成通知
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playbackFinished:) name:AVPlayerItemDidPlayToEndTimeNotification object:self.player.currentItem];
@@ -81,7 +128,6 @@ static YGAudioPlayer* _instance = nil;
             float totalDuration = CMTimeGetSeconds(strongSelf.player.currentItem.duration);
             float currtime = CMTimeGetSeconds(time);
             strongSelf.updateProgressBlock(currtime/totalDuration, currtime, totalDuration);
-            NSLog(@"currtime = %.2f totlaTime = %.2f",currtime,totalDuration);
         }
     }];
 }
@@ -89,7 +135,7 @@ static YGAudioPlayer* _instance = nil;
 - (void)currentItemRemoveOberver {
     
     [self.player.currentItem removeObserver:self forKeyPath:@"status"];
-    [self.player.currentItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
+    [self.player.currentItem removeObserver:self forKeyPath:@"rate"];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
     [self.player removeTimeObserver:self.timeObserver];
 }
@@ -101,57 +147,48 @@ static YGAudioPlayer* _instance = nil;
     if ([keyPath isEqualToString:@"status"]) {
         AVPlayerItemStatus status = [change[@"new"] integerValue];
         switch (status) {
-            case AVPlayerItemStatusReadyToPlay:
-            {
+            case AVPlayerItemStatusReadyToPlay: {
                 // 开始播放
                 [self.player play];
+                self.isPlaying = YES;
                 // 代理回调，开始初始化状态
-                if (self.startPlayBlock) {
-                    self.startPlayBlock();
+                self.playStatus = YGAudioPlayerPlayStatusStart;
+                if (self.playStatusChangeBlock) {
+                    self.playStatusChangeBlock(self.playStatus);
                 }
-            }
-                break;
-            case AVPlayerItemStatusFailed:
-            {
-                NSLog(@"加载失败");
-            }
-                break;
-            case AVPlayerItemStatusUnknown:
-            {
-                NSLog(@"未知资源");
-            }
-                break;
+            } break;
+            case AVPlayerItemStatusFailed: {
+                self.isPlaying = NO;
+                self.playStatus = YGAudioPlayerPlayStatusError;
+                if (self.playStatusChangeBlock) {
+                    self.playStatusChangeBlock(self.playStatus);
+                }
+            } break;
+            case AVPlayerItemStatusUnknown: {
+                self.isPlaying = NO;
+                self.playStatus = YGAudioPlayerPlayStatusError;
+                if (self.playStatusChangeBlock) {
+                    self.playStatusChangeBlock(self.playStatus);
+                }
+            } break;
             default:
                 break;
         }
-    }/* else if([keyPath isEqualToString:@"loadedTimeRanges"]){
-        NSArray *array = playerItem.loadedTimeRanges;
-        //本次缓冲时间范围
-        CMTimeRange timeRange = [array.firstObject CMTimeRangeValue];
-        float startSeconds = CMTimeGetSeconds(timeRange.start);
-        float durationSeconds = CMTimeGetSeconds(timeRange.duration);
-        //缓冲总长度
-        NSTimeInterval totalBuffer = startSeconds + durationSeconds;
-        NSLog(@"共缓冲：%.2f",totalBuffer);
-        
-    }*/ else if ([keyPath isEqualToString:@"rate"]) {
+    }else if ([keyPath isEqualToString:@"rate"]) {
         // rate=1:播放，rate!=1:非播放
         float rate = self.player.rate;
         if (self.playRateBlock) {
             self.playRateBlock(rate);
         }
-    } else if ([keyPath isEqualToString:@"currentItem"]) {
-        NSLog(@"新的currentItem");
-        if (self.changePlayItemBlock) {
-            self.changePlayItemBlock(self.player);
-        }
+        NSLog(@"rate = %f",rate);
     }
 }
 
 - (void)playbackFinished:(NSNotification *)notifi {
-    NSLog(@"播放完成");
-    if (self.endPlayBlock) {
-        self.endPlayBlock();
+    self.isPlaying = NO;
+    self.playStatus = YGAudioPlayerPlayStatusCompleted;
+    if (self.playStatusChangeBlock) {
+        self.playStatusChangeBlock(self.playStatus);
     }
 }
 
@@ -167,8 +204,6 @@ static YGAudioPlayer* _instance = nil;
         } else {
             // Fallback on earlier versions
         }
-        _player.currentItem.canUseNetworkResourcesForLiveStreamingWhilePaused = NO;
-        _player.volume = 0.5;
     }
     return _player;
 }

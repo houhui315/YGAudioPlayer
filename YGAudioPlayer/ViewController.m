@@ -28,26 +28,39 @@
     
     NSURL *url = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"intro" ofType:@"mp3"]];
     YGAudioPlayer *player = [YGAudioPlayer sharedInstance];
-    [player audioPlayerWithURL:url];
-    player.startPlayBlock = ^{
-        NSLog(@"startPlayBlock");
-    };
-    player.bufferProgressBlock = ^(NSTimeInterval totalBuffer) {
-        self.loadingProgressVie.progress = totalBuffer/632;
-        NSLog(@"bufferProgressBlock = %f",totalBuffer);
-        
+    player.playStatusChangeBlock = ^(YGAudioPlayerPlayStatus status) {
+        switch (status) {
+            case YGAudioPlayerPlayStatusNone: {
+                NSLog(@"未播放");
+            }break;
+            case YGAudioPlayerPlayStatusStart: {
+                NSLog(@"开始播放");
+            }break;
+            case YGAudioPlayerPlayStatusPlaying: {
+                NSLog(@"正在播放");
+            }break;
+            case YGAudioPlayerPlayStatusPause: {
+                NSLog(@"停止播放");
+            }break;
+            case YGAudioPlayerPlayStatusCompleted: {
+                NSLog(@"完成播放");
+            }break;
+            case YGAudioPlayerPlayStatusError: {
+                NSLog(@"播放错误");
+            }break;
+                
+            default:
+                break;
+        }
     };
     player.updateProgressBlock = ^(CGFloat prorgress, CGFloat currTime, CGFloat totalDuration) {
-        NSLog(@"updateProgressBlock = %d",prorgress);
         self.progressSider.value = prorgress;
         NSInteger intCurrTime = currTime;
         NSInteger intTotalTime = totalDuration;
         self.currPlayTIme.text = [NSString stringWithFormat:@"%2d:%2d",intCurrTime/60,intCurrTime%60];
         self.totalTime.text = [NSString stringWithFormat:@"%2d:%2d",intTotalTime/60,intTotalTime%60];
     };
-    player.changePlayItemBlock = ^(AVPlayer * _Nonnull player) {
-        NSLog(@"startPlayBlock");
-    };
+    [player audioPlayerWithURL:url];
 }
 
 - (IBAction)playStreamAudio:(id)sender {
@@ -57,30 +70,42 @@
 //    https://s3.amazonaws.com/dailyyoga/2/datapkg/en_Meditation+Courses/Elisha+Beginner/intro/intro.mp3
     YGAudioPlayer *player = [YGAudioPlayer sharedInstance];
     [player audioPlayerWithURL:url];
-    player.startPlayBlock = ^{
-        NSLog(@"startPlayBlock");
-    };
-    player.bufferProgressBlock = ^(NSTimeInterval totalBuffer) {
-        self.loadingProgressVie.progress = totalBuffer/632;
-        NSLog(@"bufferProgressBlock = %f",totalBuffer);
-        
+    player.playStatusChangeBlock = ^(YGAudioPlayerPlayStatus status) {
+        switch (status) {
+            case YGAudioPlayerPlayStatusNone: {
+                NSLog(@"未播放");
+            }break;
+            case YGAudioPlayerPlayStatusStart: {
+                NSLog(@"开始播放");
+            }break;
+            case YGAudioPlayerPlayStatusPlaying: {
+                NSLog(@"正在播放");
+            }break;
+            case YGAudioPlayerPlayStatusPause: {
+                NSLog(@"停止播放");
+            }break;
+            case YGAudioPlayerPlayStatusCompleted: {
+                NSLog(@"完成播放");
+            }break;
+            case YGAudioPlayerPlayStatusError: {
+                NSLog(@"播放错误");
+            }break;
+                
+            default:
+                break;
+        }
     };
     player.updateProgressBlock = ^(CGFloat prorgress, CGFloat currTime, CGFloat totalDuration) {
-        NSLog(@"updateProgressBlock = %d",prorgress);
         self.progressSider.value = prorgress;
         NSInteger intCurrTime = currTime;
         NSInteger intTotalTime = totalDuration;
         self.currPlayTIme.text = [NSString stringWithFormat:@"%2d:%2d",intCurrTime/60,intCurrTime%60];
         self.totalTime.text = [NSString stringWithFormat:@"%2d:%2d",intTotalTime/60,intTotalTime%60];
     };
-    player.changePlayItemBlock = ^(AVPlayer * _Nonnull player) {
-        NSLog(@"startPlayBlock");
-    };
 }
 
 - (IBAction)progressValueChange:(UISlider *)sender {
     
-    YGAudioPlayer *player = [YGAudioPlayer sharedInstance];
     [[YGAudioPlayer sharedInstance] seekToProgress:sender.value];
     
 }
@@ -92,7 +117,7 @@
 
 - (IBAction)playAction:(id)sender {
     YGAudioPlayer *player = [YGAudioPlayer sharedInstance];
-    [player resume];
+    [player play];
 }
 
 @end
