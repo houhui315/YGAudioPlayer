@@ -52,9 +52,9 @@
 
 - (IBAction)playStreamAudio:(id)sender {
     
-    NSURL *url = [NSURL URLWithString:@"https://s3.amazonaws.com/dailyyoga/2/datapkg/en_Meditation+Courses/Elisha+Beginner/intro/intro.mp3"];
+    NSURL *url = [NSURL URLWithString:@"http://s3.amazonaws.com/dailyyoga/2/datapkg/en_Meditation+Courses/Elisha+Beginner/Relax+and+Retune+10+minutes.mp3"];
 //    http://s3.amazonaws.com/dailyyoga/2/datapkg/en_Meditation+Courses/Elisha+Beginner/Relax+and+Retune+10+minutes.mp3
-    
+//    https://s3.amazonaws.com/dailyyoga/2/datapkg/en_Meditation+Courses/Elisha+Beginner/intro/intro.mp3
     YGAudioPlayer *player = [YGAudioPlayer sharedInstance];
     [player audioPlayerWithURL:url];
     player.startPlayBlock = ^{
@@ -81,7 +81,6 @@
 - (IBAction)progressValueChange:(UISlider *)sender {
     
     YGAudioPlayer *player = [YGAudioPlayer sharedInstance];
-    [player pause];
     [[YGAudioPlayer sharedInstance] seekToProgress:sender.value];
     
 }

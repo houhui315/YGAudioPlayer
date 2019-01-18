@@ -74,7 +74,6 @@
                                 <state key="normal" title="播放"/>
                                 <connections>
                                     <action selector="playAction:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Kaa-9l-wHm"/>
-                                    <action selector="playLocalAudio:" destination="BYZ-38-t0r" eventType="touchUpInside" id="1Rj-GU-qFf"/>
                                 </connections>
                             </button>
                             <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nSd-7D-TmX">

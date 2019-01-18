@@ -15,10 +15,6 @@
 
 @property (nonatomic, strong) id timeObserver;
 
-@property (nonatomic, strong) AVAudioPlayer *audioPlayer;
-
-@property (nonatomic, assign) BOOL isLocalAudio;
-
 @end
 
 @implementation YGAudioPlayer
@@ -36,48 +32,34 @@ static YGAudioPlayer* _instance = nil;
 
 - (void)audioPlayerWithURL:(NSURL *)playerItemURL {
     
-    if ([playerItemURL.absoluteString hasPrefix:@"http"]) {
-        self.isLocalAudio = NO;
-        [self currentItemRemoveOberver];
-        
-        AVPlayerItem *playerItem = [[AVPlayerItem alloc] initWithURL:playerItemURL];
-        [self.player replaceCurrentItemWithPlayerItem:playerItem];
-        [self currentItemAddObserver];
-    }else{
-        self.isLocalAudio = YES;
-        self.audioPlayer = [[AVAudioPlayer alloc] initWithContentsOfURL:playerItemURL error:nil];
-        [self.audioPlayer prepareToPlay];
-        [self.audioPlayer play];
-    }
+    [self currentItemRemoveOberver];
+    
+    AVPlayerItem *playerItem = [[AVPlayerItem alloc] initWithURL:playerItemURL];
+    [self.player replaceCurrentItemWithPlayerItem:playerItem];
+    [self currentItemAddObserver];
 }
 
 - (void)pause {
     
-    if (self.isLocalAudio) {
-        [self.audioPlayer pause];
-    }else{
-        [self.player pause];
-    }
+    [self.player pause];
 }
 
 - (void)resume {
     
-    if (self.isLocalAudio) {
-        [self.audioPlayer playAtTime:self.audioPlayer.deviceCurrentTime];
-    }else{
-        [self.player play];
-    }
+    [self.player play];
 }
 
 - (void)seekToProgress:(CGFloat)progress {
     
     float totalDuration = CMTimeGetSeconds(self.player.currentItem.duration);
     CGFloat seekTime = totalDuration*progress;
-    [self.player seekToTime:CMTimeMakeWithSeconds(seekTime, 1) completionHandler:^(BOOL finished) {
-        if (finished) {
-            [self.player play];
-        }
-    }];
+    if (self.player && self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
+        [self.player seekToTime:CMTimeMakeWithSeconds(seekTime, self.player.currentItem.currentTime.timescale) completionHandler:^(BOOL finished) {
+            if (finished) {
+                
+            }
+        }];
+    }
 }
 
 - (void)currentItemAddObserver {
