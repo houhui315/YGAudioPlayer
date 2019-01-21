@@ -16,14 +16,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 typedef NS_ENUM(NSUInteger, YGAudioPlayerPlayStatus) {
     
-    ///未播放
-    YGAudioPlayerPlayStatusNone,
     ///开始播放
-    YGAudioPlayerPlayStatusStart,
+    YGAudioPlayerPlayStatusStart = 1,
+    ///缓冲中
+    YGAudioPlayerPlayStatusBuffer,
     ///正在播放
     YGAudioPlayerPlayStatusPlaying,
-    ///停止播放
+    ///暂停播放
     YGAudioPlayerPlayStatusPause,
+    ///停止播放
+    YGAudioPlayerPlayStatusStop,
     ///播放完成
     YGAudioPlayerPlayStatusCompleted,
     ///播放错误
@@ -33,7 +35,6 @@ typedef NS_ENUM(NSUInteger, YGAudioPlayerPlayStatus) {
 
 typedef void(^YGAudioPlayerUpdateProgressBlock)(CGFloat prorgress, CGFloat currTime, CGFloat totalDuration);
 typedef void(^YGAudioPlayerPlayStatysChangeBlock)(YGAudioPlayerPlayStatus status);
-typedef void(^YGAudioPlayerChangePlayRateBlock)(CGFloat playRate);
 
 
 @interface YGAudioPlayer : NSObject
@@ -43,12 +44,17 @@ typedef void(^YGAudioPlayerChangePlayRateBlock)(CGFloat playRate);
 /*!
  播放音频链接（包括网络URL和本地URL）
  */
-- (void)audioPlayerWithURL:(NSURL *)playerItemURL;
+- (void)playAudioWithURL:(NSURL *)playerItemURL;
 
 /*!
  暂停播放
  */
 - (void)pause;
+
+/*!
+ 停止播放
+ */
+- (void)stop;
 
 /*!
  播放
@@ -76,6 +82,11 @@ typedef void(^YGAudioPlayerChangePlayRateBlock)(CGFloat playRate);
 - (NSUInteger)playDuration;
 
 /*!
+ 缓存进度
+ */
+@property (nonatomic, assign) CGFloat bufferProgress;
+
+/*!
  是否正在播放
  */
 @property (atomic, assign) BOOL isPlaying;
@@ -83,7 +94,7 @@ typedef void(^YGAudioPlayerChangePlayRateBlock)(CGFloat playRate);
 /*!
  当前播放状态
  */
-@property (atomic, assign) YGAudioPlayerPlayStatus playStatus;
+@property (nonatomic, assign) YGAudioPlayerPlayStatus playStatus;
 
 /*!
  更新播放进度回调，每秒调用一次
@@ -94,9 +105,6 @@ typedef void(^YGAudioPlayerChangePlayRateBlock)(CGFloat playRate);
  播放状态改变回调
  */
 @property (nonatomic, copy) YGAudioPlayerPlayStatysChangeBlock playStatusChangeBlock;
-/*!
- */
-@property (nonatomic, copy) YGAudioPlayerChangePlayRateBlock playRateBlock;
 
 
 
